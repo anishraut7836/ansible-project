@@ -1,0 +1,113 @@
+---
+  - hosts: all
+    gather_facts: no
+    remote_user: anish
+    become: true
+    become_method: sudo
+    vars:
+      user: "deploy"
+      password: "Welcome123"
+      ansible_port: '2222'
+    tasks:
+      - name: Add the user 'deploy'
+        user:
+          name: "{{ user }}"
+          comment: Deploy
+          state: present
+          createhome: yes
+
+
+      - name: Change the password for user 'deploy'
+        user:
+          name: "{{ user }}"
+          state: present
+          password: "{{ password|password_hash('sha512') }}"
+
+
+      - name: Create a 2048-bit SSH key for user deploy in ~deploy/.ssh/id_rsa
+        user:
+          name: "{{ user }}"
+          generate_ssh_key: yes
+          ssh_key_bits: 2048
+          ssh_key_file: .ssh/id_rsa
+
+
+      - name: Add user to sudoers
+        user:
+          name: "{{ user }}"
+          groups: sudo,adm
+
+
+      - name: Update all packages to their latest version
+        apt:
+          name: "*"
+          state: latest
+          update_cache: yes
+          force_apt_get: yes
+          become: true
+
+      - name: Upgrade the OS
+        apt:
+          upgrade: dist
+
+
+      - name: ensure ufw installed
+        apt: name=ufw update_cache=true
+
+      - name: ufw deny incoming
+        ufw:
+          direction: incoming
+          proto: any
+          policy: deny
+        notify:
+        - reload ufw
+
+      - name: ufw allow outgoing
+        ufw:
+          direction: outgoing
+          proto: any
+          policy: allow
+        notify:
+        - reload ufw
+
+      - name: ufw allow ssh
+        ufw:
+          rule: allow
+          name: OpenSSH
+        notify:
+        - reload ufw
+
+      - name: Set Postfix option hostname
+        debconf:
+          name=postifx
+          question="postfix/mailname"
+          value="sandbox"
+          vtype="string"
+
+      - name: Set Postfix option type as internet site
+        debconf:
+          name=postfix
+          question="postfix/main_mailer_type"
+          value="'Internet Site'"
+          vtype="select"
+
+      - name: install postfix
+        apt: name=postfix state=present
+
+      - name: allow port ssh custom port 2222
+        ufw:
+         rule: allow
+         port: "{{ ansible_port }}"
+         proto: tcp
+
+      - name: enable ufw service
+        ufw:
+          state: enabled
+      - name: Disable root login
+        user:
+          name: root
+          password: '!'
+    handlers:
+    - name: reload ufw
+      ufw:
+        state: reloaded
