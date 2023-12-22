@@ -1,0 +1,10 @@
+---
+- name: Deploy Nginx web-page on server
+  hosts: all
+  vars:
+    ansistrano_deploy_from: "{{ playbook_dir }}/../my-app"
+    ansistrano_deploy_to: "/var/www/html/my-app"
+    ansistrano_keep_releases: 3
+    ansistrano_deploy_via: rsync
+  roles:
+    - { role: ansistrano.deploy }

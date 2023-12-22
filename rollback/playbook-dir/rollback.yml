@@ -1,0 +1,7 @@
+---
+- name: Rollback nginx web page
+  hosts: all
+  vars:
+    ansistrano_deploy_to: "/var/www/html/my-app"
+  roles:
+    - { role: ansistrano.rollback }

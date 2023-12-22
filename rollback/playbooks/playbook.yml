@@ -1,0 +1,19 @@
+- name: Rsync installation
+  hosts: node1
+  become: true
+  remote_user: anish
+  become_method: sudo
+  tasks:
+    - name: Rsync installation
+      apt:
+        name: rsync
+        state: present
+    - name: Nginx Installation
+      apt:
+        name: nginx
+        state: latest
+    - name: Nginx service start
+      service:
+        name: nginx
+        state: restarted
+        enabled: yes
