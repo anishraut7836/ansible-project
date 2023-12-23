@@ -1,0 +1,6 @@
+---
+roles:
+  - name: ssh_config
+    src: https://github.com/anishraut7836/ansible-role.git
+    version: main
+    scm: git
